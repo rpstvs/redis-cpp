@@ -17,12 +17,12 @@ const (
 	ARRAY   = '*'
 )
 
-type value struct {
+type Value struct {
 	typ   string
 	str   string
 	num   int
 	bulk  string
-	array []value
+	array []Value
 }
 
 type Resp struct {
@@ -60,6 +60,25 @@ func (r *Resp) readInteger() (x int, n int, err error) {
 		return 0, n, err
 	}
 	return int(i64), n, nil
+}
+
+func (r *Resp) Read() (Value, error) {
+	_type, err := r.reader.ReadByte()
+
+	if err != nil {
+		return Value{}, err
+	}
+
+	switch _type {
+	case ARRAY:
+		return r.readArray()
+	case BULK:
+		return r.readBulk()
+	default:
+		fmt.Printf("Unknown type: %v", string(_type))
+		return Value{}, nil
+	}
+
 }
 
 func tmp() {
