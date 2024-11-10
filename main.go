@@ -2,14 +2,12 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"net"
-	"os"
 )
 
 func main() {
 
-	fmt.Println("helloworld")
+	fmt.Println("Listening on port 6379")
 
 	l, err := net.Listen("tcp", ":6379")
 
@@ -28,16 +26,15 @@ func main() {
 	defer conn.Close()
 
 	for {
-		buf := make([]byte, 1024)
-		_, err := conn.Read(buf)
+		resp := NewResp(conn)
+		value, err := resp.Read()
 
-		if err != io.EOF {
-			break
+		if err != nil {
+			fmt.Println(err)
+			return
 		}
-		fmt.Println(err)
-		os.Exit(1)
+		fmt.Println(value)
+		conn.Write([]byte("+OK\r\n"))
 	}
-
-	conn.Write([]byte("+OK\r\n"))
 
 }

@@ -4,9 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
-	"strings"
 )
 
 const (
@@ -81,23 +79,47 @@ func (r *Resp) Read() (Value, error) {
 
 }
 
-func tmp() {
-	input := "$5\r\nAhmed\r\n"
-	reader := bufio.NewReader(strings.NewReader(input))
+func (r *Resp) readArray() (Value, error) {
+	v := Value{}
+	v.typ = "array"
 
-	b, _ := reader.ReadByte()
-	if b != '$' {
-		fmt.Println("Invalid type, expecting bulk strings only")
-		os.Exit(1)
+	len, _, err := r.readInteger()
+
+	if err != nil {
+		return v, err
 	}
 
-	size, _ := reader.ReadByte()
+	v.array = make([]Value, 0)
 
-	strSize, _ := strconv.ParseInt(string(size), 10, 64)
-	reader.ReadByte()
-	reader.ReadByte()
+	for i := 0; i < len; i++ {
+		val, err := r.Read()
 
-	name := make([]byte, strSize)
-	reader.Read(name)
-	fmt.Println(string(name))
+		if err != nil {
+			return v, err
+		}
+
+		v.array = append(v.array, val)
+	}
+	return v, nil
+}
+
+func (r *Resp) readBulk() (Value, error) {
+	v := Value{}
+
+	v.typ = "bulk"
+
+	len, _, err := r.readInteger()
+
+	if err != nil {
+		return v, err
+	}
+
+	bulk := make([]byte, len)
+
+	v.bulk = string(bulk)
+
+	r.readLine()
+
+	return v, nil
+
 }
