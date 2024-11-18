@@ -37,10 +37,8 @@ func (r *Resp) readLine() (line []byte, n int, err error) {
 		if err != nil {
 			return nil, 0, err
 		}
-
 		n += 1
 		line = append(line, b)
-
 		if len(line) >= 2 && line[len(line)-2] == '\r' {
 			break
 		}
@@ -76,7 +74,6 @@ func (r *Resp) Read() (Value, error) {
 		fmt.Printf("Unknown type: %v", string(_type))
 		return Value{}, nil
 	}
-
 }
 
 func (r *Resp) readArray() (Value, error) {
@@ -89,7 +86,7 @@ func (r *Resp) readArray() (Value, error) {
 		return v, err
 	}
 
-	v.array = make([]Value, 0)
+	v.array = make([]Value, len)
 
 	for i := 0; i < len; i++ {
 		val, err := r.Read()
@@ -98,7 +95,7 @@ func (r *Resp) readArray() (Value, error) {
 			return v, err
 		}
 
-		v.array = append(v.array, val)
+		v.array[i] = val
 	}
 	return v, nil
 }
@@ -115,11 +112,49 @@ func (r *Resp) readBulk() (Value, error) {
 	}
 
 	bulk := make([]byte, len)
-
+	r.reader.Read(bulk)
 	v.bulk = string(bulk)
 
 	r.readLine()
 
 	return v, nil
 
+}
+
+func (v Value) Marshal() []byte {
+	switch v.typ {
+	case "array":
+		return v.marshalArray()
+	case "bulk":
+		return v.marshalBulk()
+	case "string":
+		return v.marshalString()
+	case "null":
+		return v.marshalNull()
+	case "error":
+		return v.marshalError()
+	default:
+		return []byte{}
+	}
+}
+
+func (v Value) marshalString() []byte {
+	var bytes []byte
+	bytes = append(bytes, STRING)
+	bytes = append(bytes, v.str...)
+	bytes = append(bytes, '\r', '\n')
+	return bytes
+
+}
+
+func (v Value) marshalBulk() []byte {
+	var bytes []byte
+
+	bytes = append(bytes, BULK)
+	bytes = append(bytes, strconv.Itoa(len(v.bulk))...)
+	bytes = append(bytes, '\r', '\n')
+	bytes = append(bytes, v.bulk...)
+	bytes = append(bytes, '\r', '\n')
+
+	return bytes
 }
