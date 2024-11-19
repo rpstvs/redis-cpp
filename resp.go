@@ -158,3 +158,29 @@ func (v Value) marshalBulk() []byte {
 
 	return bytes
 }
+
+func (v Value) marshalArray() []byte {
+	len := len(v.array)
+	var bytes []byte
+	bytes = append(bytes, ARRAY)
+	bytes = append(bytes, strconv.Itoa(len)...)
+	bytes = append(bytes, '\r', '\n')
+
+	for i := 0; i < len; i++ {
+		bytes = append(bytes, v.array[i].Marshal()...)
+	}
+
+	return bytes
+}
+
+func (v Value) marshalError() []byte {
+	var byte []byte
+	byte = append(byte, ERROR)
+	byte = append(byte, v.str...)
+	byte = append(byte, '\r', '\n')
+	return byte
+}
+
+func (v Value) marshalNull() []byte {
+	return []byte("$-1\r\n")
+}
