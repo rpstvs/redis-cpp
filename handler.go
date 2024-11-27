@@ -32,3 +32,22 @@ func set(args []Value) Value {
 
 	return Value{typ: "string", str: "OK"}
 }
+
+func get(args []Value) Value {
+	if len(args) != 1 {
+		return Value{typ: "error", str: "Err wrong number of arguments"}
+	}
+
+	key := args[0].bulk
+
+	SETsMu.RLock()
+	value, ok := SETs[key]
+
+	SETsMu.Unlock()
+
+	if !ok {
+		return Value{typ: "null"}
+	}
+
+	return Value{typ: "bulk", bulk: value}
+}
