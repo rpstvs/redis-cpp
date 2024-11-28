@@ -4,10 +4,14 @@ import "sync"
 
 var Handlers = map[string]func([]Value) Value{
 	"PING": ping,
+	"GET":  get,
+	"SET":  set,
 }
 
 var SETs = map[string]string{}
 var SETsMu = sync.RWMutex{}
+var HSETs = map[string]map[string]string{}
+var HSEtsMu = sync.RWMutex{}
 
 func ping(args []Value) Value {
 	if len(args) == 0 {
@@ -50,4 +54,26 @@ func get(args []Value) Value {
 	}
 
 	return Value{typ: "bulk", bulk: value}
+}
+
+func hgets(args []Value) Value {
+	if len(args) != 3 {
+		return Value{typ: "error", str: "ERR wrong number of argument"}
+	}
+
+	hash := args[0].bulk
+	key := args[1].bulk
+	value := args[2].bulk
+
+	HSEtsMu.Lock()
+
+	if _, ok := HSETs[hash]; !ok {
+		HSETs[hash] = map[string]string{}
+	}
+
+	HSETs[hash][key] = value
+
+	HSEtsMu.Unlock()
+
+	return Value{typ: "string", str: "OK"}
 }
