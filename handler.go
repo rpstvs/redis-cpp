@@ -1,6 +1,8 @@
 package main
 
-import "sync"
+import (
+	"sync"
+)
 
 var Handlers = map[string]func([]Value) Value{
 	"PING": ping,
@@ -56,7 +58,7 @@ func get(args []Value) Value {
 	return Value{typ: "bulk", bulk: value}
 }
 
-func hgets(args []Value) Value {
+func hset(args []Value) Value {
 	if len(args) != 3 {
 		return Value{typ: "error", str: "ERR wrong number of argument"}
 	}
@@ -76,4 +78,21 @@ func hgets(args []Value) Value {
 	HSEtsMu.Unlock()
 
 	return Value{typ: "string", str: "OK"}
+}
+
+func hget(args []Value) Value {
+	if len(args) != 2 {
+		return Value{typ: "error", str: "ERR wrong number of arguments"}
+	}
+	hash := args[0].bulk
+	key := args[1].bulk
+
+	HSEtsMu.Lock()
+	value, ok := HSETs[hash][key]
+
+	if !ok {
+		return Value{typ: "null"}
+	}
+
+	return Value{typ: "bulk", bulk: value}
 }
